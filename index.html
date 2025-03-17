@@ -3,66 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Watch Anime Episode</title>
+    <title>AniList Video Player</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #2b2d42;
-            color: #edf2f4;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
+            font-family: Arial, sans-serif;
             margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
         }
         .container {
             max-width: 800px;
             margin: 0 auto;
+            background-color: #fff;
             padding: 20px;
-            background-color: #1a1c2c;
             border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
         h1 {
-            color: #ef233c;
+            color: #2e51a2;
             text-align: center;
-            margin-bottom: 20px;
         }
-        .video-container {
-            position: relative;
+        #video-container {
             width: 100%;
-            padding-bottom: 56.25%; /* 16:9 aspect ratio */
-            height: 0;
+            margin: 20px 0;
         }
-        iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
+        #player {
             width: 100%;
-            height: 100%;
+            height: 450px;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+        button {
+            background-color: #2e51a2;
+            color: white;
             border: none;
-            border-radius: 8px;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        button:hover {
+            background-color: #1f3b7d;
+        }
+        .info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #2e51a2;
+        }
+        .error {
+            color: #721c24;
+            background-color: #f8d7da;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            display: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Watch Anime Episode</h1>
-        <div class="video-container">
-            <iframe id="videoPlayer" src="" allowfullscreen></iframe>
+        <h1>AniList Video Player</h1>
+        
+        <div id="video-container">
+            <div id="player">
+                <div id="loading-message">Loading content information...</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="fetch-btn">Fetch Video Information</button>
+        </div>
+        
+        <div id="error-message" class="error"></div>
+        
+        <div id="anime-info" class="info">
+            <h3>About This Media</h3>
+            <p>ID: 99263 - Episode: 1</p>
+            <div id="title-container"></div>
+            <div id="description-container"></div>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', function() {
             const animeId = 99263;
-            const episodeNumber = 1;
-            const videoPlayer = document.getElementById('videoPlayer');
-
-            // Function to fetch video URL for the anime episode
-            function fetchEpisodeVideoUrl(animeId, episodeNumber) {
-                const query = `
+            const episode = 1;
+            const errorElement = document.getElementById('error-message');
+            const playerElement = document.getElementById('player');
+            const loadingMessage = document.getElementById('loading-message');
+            const titleContainer = document.getElementById('title-container');
+            const descriptionContainer = document.getElementById('description-container');
+            
+            // AniList GraphQL endpoint
+            const ANILIST_API = 'https://graphql.anilist.co';
+            
+            // GraphQL query to get anime information
+            const query = `
                 query ($id: Int) {
                     Media(id: $id, type: ANIME) {
                         id
@@ -71,6 +117,7 @@
                             english
                             native
                         }
+                        description
                         streamingEpisodes {
                             title
                             thumbnail
@@ -79,40 +126,97 @@
                         }
                     }
                 }
-                `;
-
-                const variables = {
-                    id: animeId
-                };
-
-                fetch('https://graphql.anilist.co', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        query: query,
-                        variables: variables
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    const episodes = data.data.Media.streamingEpisodes;
-                    const episode = episodes.find(ep => ep.title.includes(`Episode ${episodeNumber}`));
-                    if (episode) {
-                        videoPlayer.src = episode.url;
-                    } else {
-                        console.error('Episode not found');
+            `;
+            
+            // Function to fetch anime data
+            async function fetchAnimeData() {
+                loadingMessage.textContent = "Fetching anime data...";
+                
+                try {
+                    const response = await fetch(ANILIST_API, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            query: query,
+                            variables: { id: animeId }
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.errors) {
+                        throw new Error(result.errors[0].message);
                     }
-                })
-                .catch(error => {
-                    console.error('Error fetching episode video URL:', error);
-                });
+                    
+                    return result.data.Media;
+                } catch (error) {
+                    showError("Error fetching anime data: " + error.message);
+                    return null;
+                }
             }
-
-            // Fetch and set the video URL for the specified anime episode
-            fetchEpisodeVideoUrl(animeId, episodeNumber);
+            
+            // Function to display anime information
+            function displayAnimeInfo(anime) {
+                if (!anime) return;
+                
+                // Display title
+                const title = anime.title.english || anime.title.romaji || anime.title.native;
+                titleContainer.innerHTML = `<h2>${title}</h2>`;
+                
+                // Display description (with HTML sanitized)
+                if (anime.description) {
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = anime.description;
+                    descriptionContainer.innerHTML = `<p>${tempDiv.textContent}</p>`;
+                }
+                
+                // Check if streaming episodes are available
+                if (anime.streamingEpisodes && anime.streamingEpisodes.length > 0) {
+                    const episodeInfo = anime.streamingEpisodes.find(ep => ep.title.includes(`${episode}`) || ep.title.toLowerCase().includes(`episode ${episode}`));
+                    
+                    if (episodeInfo) {
+                        loadingMessage.textContent = `Episode ${episode} is available on ${episodeInfo.site}.`;
+                        
+                        if (episodeInfo.thumbnail) {
+                            playerElement.innerHTML = `
+                                <div style="text-align: center;">
+                                    <img src="${episodeInfo.thumbnail}" alt="Episode Thumbnail" style="max-width: 100%; max-height: 350px;">
+                                    <p>This video is available on ${episodeInfo.site}. Due to licensing restrictions, it cannot be played directly here.</p>
+                                    <a href="${episodeInfo.url}" target="_blank" style="display: inline-block; margin-top: 10px; padding: 8px 15px; background-color: #2e51a2; color: white; text-decoration: none; border-radius: 4px;">Watch on ${episodeInfo.site}</a>
+                                </div>
+                            `;
+                        } else {
+                            playerElement.innerHTML = `
+                                <div style="text-align: center;">
+                                    <p>This video is available on ${episodeInfo.site}. Due to licensing restrictions, it cannot be played directly here.</p>
+                                    <a href="${episodeInfo.url}" target="_blank" style="display: inline-block; margin-top: 10px; padding: 8px 15px; background-color: #2e51a2; color: white; text-decoration: none; border-radius: 4px;">Watch on ${episodeInfo.site}</a>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        loadingMessage.textContent = `No specific information found for Episode ${episode}.`;
+                    }
+                } else {
+                    loadingMessage.textContent = "No streaming information available through AniList API.";
+                }
+            }
+            
+            // Function to show error message
+            function showError(message) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+                loadingMessage.textContent = "An error occurred.";
+            }
+            
+            // Add event listener to fetch button
+            document.getElementById('fetch-btn').addEventListener('click', async function() {
+                errorElement.style.display = 'none';
+                const animeData = await fetchAnimeData();
+                displayAnimeInfo(animeData);
+            });
         });
     </script>
 </body>
