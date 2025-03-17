@@ -1,0 +1,89 @@
+<div class="player-container">
+    <h2 class="section-title">Watch</h2>
+    
+    <div class="video-container">
+        <div id="videoPlaceholder" class="video-placeholder">
+            <div class="video-placeholder-icon">▶️</div>
+            <p>Select an episode to start watching</p>
+        </div>
+        <iframe id="videoPlayer" class="video-player" style="display:none;" allowfullscreen></iframe>
+    </div>
+    
+    <div class="player-controls">
+        <button id="prevEpisode" class="control-button" disabled>◀ Previous</button>
+        <button id="nextEpisode" class="control-button" disabled>Next ▶</button>
+    </div>
+    
+    <div id="episodeInfo" class="episode-info" style="display:none;">
+        <h3 id="episodeInfoTitle" class="episode-info-title"></h3>
+        <div id="episodeInfoDescription" class="episode-info-description"></div>
+    </div>
+</div>
+
+<script>
+// Replace the playEpisode function with this fixed version
+function playEpisode(index) {
+    // Validate index
+    if (index < 0 || index >= episodes.length) return;
+    
+    // Update current episode index
+    currentEpisodeIndex = index;
+    
+    // Get the episode data
+    const episode = episodes[index];
+    
+    // Update active episode in the list
+    const episodeItems = episodesList.querySelectorAll('.episode-item');
+    episodeItems.forEach(item => item.classList.remove('active'));
+    episodeItems[index].classList.add('active');
+    
+    // Scroll to the active episode in the list
+    episodeItems[index].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    
+    // Hide placeholder and show video player
+    videoPlaceholder.style.display = 'none';
+    videoPlayer.style.display = 'block';
+    
+    // Clear existing src first (important for some browsers)
+    videoPlayer.src = '';
+    
+    // Set timeout to ensure DOM updates before loading new video
+    setTimeout(() => {
+        // For demo purposes we're using a placeholder video
+        // In a real app, you would use: episode.videoUrl
+        videoPlayer.src = `https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&rel=0&modestbranding=1`;
+        
+        // Force iframe refresh (can help with some player issues)
+        videoPlayer.contentWindow.location.reload(true);
+    }, 100);
+    
+    // Update episode info
+    episodeInfo.style.display = 'block';
+    episodeInfoTitle.textContent = `${episode.number}. ${episode.title}`;
+    episodeInfoDescription.textContent = episode.description;
+    
+    // Update navigation controls
+    updateNavigationControls();
+}
+
+// Add this function to handle video errors
+function handleVideoError() {
+    videoPlayer.addEventListener('error', () => {
+        // Show an error message in the video container
+        videoPlaceholder.style.display = 'flex';
+        videoPlaceholder.innerHTML = `
+            <div class="video-placeholder-icon">⚠️</div>
+            <p>Error loading video. Please try again.</p>
+        `;
+        videoPlayer.style.display = 'none';
+    });
+}
+
+// Call this function after the page loads
+document.addEventListener('DOMContentLoaded', () => {
+    // Existing code...
+    
+    // Add error handling for video
+    handleVideoError();
+});
+</script>
