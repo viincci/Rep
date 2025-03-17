@@ -70,6 +70,7 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/anigo-anime-api@1.0.3/lib/zoro/getAnimeInfoFromZoro.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/anigo-anime-api@1.0.3/lib/animix/getEpisodeSourceFromAnimix.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -215,7 +216,7 @@
             // Function to fetch and display episode source from Animix
             async function fetchAndDisplayEpisodeSource() {
                 try {
-                    const episodeSource = await getAnimeInfoFromZoro.getEpisodeSourceFromAnimix("One Piece", "1015");
+                    const episodeSource = await anigo.getEpisodeSourceFromAnimix("One Piece", "1015");
                     console.log(episodeSource);
                 } catch (error) {
                     showError("Error fetching episode source: " + error.message);
