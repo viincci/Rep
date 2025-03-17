@@ -3,78 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AniList Anime Video</title>
+    <title>Watch Anime Episode</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #121212;
-            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2b2d42;
+            color: #edf2f4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
         }
         .container {
-            width: 80%;
-            margin: auto;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1c2c;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         }
-        video {
+        h1 {
+            color: #ef233c;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .video-container {
+            position: relative;
             width: 100%;
-            max-width: 720px;
-            margin-top: 20px;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
         }
-        img {
-            width: 200px;
-            border-radius: 10px;
+        iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 8px;
         }
     </style>
 </head>
 <body>
-
     <div class="container">
-        <h1 id="anime-title">Loading...</h1>
-        <img id="anime-cover" src="" alt="Anime Cover">
-        <p id="anime-desc">Fetching description...</p>
-        
-        <video controls>
-            <source src="VIDEO_URL_HERE" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
+        <h1>Watch Anime Episode</h1>
+        <div class="video-container">
+            <iframe id="videoPlayer" src="" allowfullscreen></iframe>
+        </div>
     </div>
 
     <script>
-        const animeId = "ANIME_ID_HERE"; // Replace with an AniList anime ID
+        document.addEventListener('DOMContentLoaded', () => {
+            const animeId = 99263;
+            const episodeNumber = 1;
+            const videoPlayer = document.getElementById('videoPlayer');
 
-        async function fetchAnime() {
-            const query = `
+            // Function to fetch video URL for the anime episode
+            function fetchEpisodeVideoUrl(animeId, episodeNumber) {
+                const query = `
                 query ($id: Int) {
                     Media(id: $id, type: ANIME) {
+                        id
                         title {
                             romaji
+                            english
+                            native
                         }
-                        description
-                        coverImage {
-                            large
+                        streamingEpisodes {
+                            title
+                            thumbnail
+                            url
+                            site
                         }
                     }
                 }
-            `;
+                `;
 
-            const variables = { id: animeId };
+                const variables = {
+                    id: animeId
+                };
 
-            const response = await fetch("https://graphql.anilist.co", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ query, variables })
-            });
+                fetch('https://graphql.anilist.co', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        variables: variables
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const episodes = data.data.Media.streamingEpisodes;
+                    const episode = episodes.find(ep => ep.title.includes(`Episode ${episodeNumber}`));
+                    if (episode) {
+                        videoPlayer.src = episode.url;
+                    } else {
+                        console.error('Episode not found');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching episode video URL:', error);
+                });
+            }
 
-            const data = await response.json();
-            const anime = data.data.Media;
-
-            document.getElementById("anime-title").innerText = anime.title.romaji;
-            document.getElementById("anime-desc").innerHTML = anime.description;
-            document.getElementById("anime-cover").src = anime.coverImage.large;
-        }
-
-        fetchAnime();
+            // Fetch and set the video URL for the specified anime episode
+            fetchEpisodeVideoUrl(animeId, episodeNumber);
+        });
     </script>
-
 </body>
 </html>
