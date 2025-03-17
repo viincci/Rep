@@ -104,10 +104,10 @@
             const loadingMessage = document.getElementById('loading-message');
             const titleContainer = document.getElementById('title-container');
             const descriptionContainer = document.getElementById('description-container');
-            
+
             // AniList GraphQL endpoint
             const ANILIST_API = 'https://graphql.anilist.co';
-            
+
             // GraphQL query to get anime information
             const query = `
                 query ($id: Int) {
@@ -128,11 +128,11 @@
                     }
                 }
             `;
-            
-            // Function to fetch anime data
+
+            // Function to fetch anime data from AniList API
             async function fetchAnimeData() {
                 loadingMessage.textContent = "Fetching anime data...";
-                
+
                 try {
                     const response = await fetch(ANILIST_API, {
                         method: 'POST',
@@ -145,42 +145,42 @@
                             variables: { id: animeId }
                         })
                     });
-                    
+
                     const result = await response.json();
-                    
+
                     if (result.errors) {
                         throw new Error(result.errors[0].message);
                     }
-                    
+
                     return result.data.Media;
                 } catch (error) {
                     showError("Error fetching anime data: " + error.message);
                     return null;
                 }
             }
-            
+
             // Function to display anime information
             function displayAnimeInfo(anime) {
                 if (!anime) return;
-                
+
                 // Display title
                 const title = anime.title.english || anime.title.romaji || anime.title.native;
                 titleContainer.innerHTML = `<h2>${title}</h2>`;
-                
+
                 // Display description (with HTML sanitized)
                 if (anime.description) {
                     const tempDiv = document.createElement('div');
                     tempDiv.innerHTML = anime.description;
                     descriptionContainer.innerHTML = `<p>${tempDiv.textContent}</p>`;
                 }
-                
+
                 // Check if streaming episodes are available
                 if (anime.streamingEpisodes && anime.streamingEpisodes.length > 0) {
                     const episodeInfo = anime.streamingEpisodes.find(ep => ep.title.includes(`${episode}`) || ep.title.toLowerCase().includes(`episode ${episode}`));
-                    
+
                     if (episodeInfo) {
                         loadingMessage.textContent = `Episode ${episode} is available on ${episodeInfo.site}.`;
-                        
+
                         if (episodeInfo.thumbnail) {
                             playerElement.innerHTML = `
                                 <div style="text-align: center;">
@@ -204,17 +204,18 @@
                     loadingMessage.textContent = "No streaming information available through AniList API.";
                 }
             }
-            
+
             // Function to show error message
             function showError(message) {
                 errorElement.textContent = message;
                 errorElement.style.display = 'block';
                 loadingMessage.textContent = "An error occurred.";
             }
-            
+
+            // Function to fetch and display episode source from Animix
             async function fetchAndDisplayEpisodeSource() {
                 try {
-                    const episodeSource = await anigo.getEpisodeSourceFromAnimix("One Piece", "1015");
+                    const episodeSource = await getAnimeInfoFromZoro.getEpisodeSourceFromAnimix("One Piece", "1015");
                     console.log(episodeSource);
                 } catch (error) {
                     showError("Error fetching episode source: " + error.message);
