@@ -69,8 +69,7 @@
             display: none;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/anigo-anime-api@1.0.3/lib/zoro/getAnimeInfoFromZoro.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/anigo-anime-api@1.0.3/lib/animix/getEpisodeSourceFromAnimix.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -135,19 +134,12 @@
                 loadingMessage.textContent = "Fetching anime data...";
 
                 try {
-                    const response = await fetch(ANILIST_API, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            query: query,
-                            variables: { id: animeId }
-                        })
+                    const response = await axios.post(ANILIST_API, {
+                        query: query,
+                        variables: { id: animeId }
                     });
 
-                    const result = await response.json();
+                    const result = response.data;
 
                     if (result.errors) {
                         throw new Error(result.errors[0].message);
@@ -216,7 +208,7 @@
             // Function to fetch and display episode source from Animix
             async function fetchAndDisplayEpisodeSource() {
                 try {
-                    const episodeSource = await anigo.getEpisodeSourceFromAnimix("One Piece", "1015");
+                    const episodeSource = await getEpisodeSourceFromAnimix("One Piece", "1015");
                     console.log(episodeSource);
                 } catch (error) {
                     showError("Error fetching episode source: " + error.message);
