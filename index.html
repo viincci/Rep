@@ -1,89 +1,80 @@
-<div class="player-container">
-    <h2 class="section-title">Watch</h2>
-    
-    <div class="video-container">
-        <div id="videoPlaceholder" class="video-placeholder">
-            <div class="video-placeholder-icon">▶️</div>
-            <p>Select an episode to start watching</p>
-        </div>
-        <iframe id="videoPlayer" class="video-player" style="display:none;" allowfullscreen></iframe>
-    </div>
-    
-    <div class="player-controls">
-        <button id="prevEpisode" class="control-button" disabled>◀ Previous</button>
-        <button id="nextEpisode" class="control-button" disabled>Next ▶</button>
-    </div>
-    
-    <div id="episodeInfo" class="episode-info" style="display:none;">
-        <h3 id="episodeInfoTitle" class="episode-info-title"></h3>
-        <div id="episodeInfoDescription" class="episode-info-description"></div>
-    </div>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AniList Anime Video</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #121212;
+            color: white;
+        }
+        .container {
+            width: 80%;
+            margin: auto;
+        }
+        video {
+            width: 100%;
+            max-width: 720px;
+            margin-top: 20px;
+        }
+        img {
+            width: 200px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
 
-<script>
-// Replace the playEpisode function with this fixed version
-function playEpisode(index) {
-    // Validate index
-    if (index < 0 || index >= episodes.length) return;
-    
-    // Update current episode index
-    currentEpisodeIndex = index;
-    
-    // Get the episode data
-    const episode = episodes[index];
-    
-    // Update active episode in the list
-    const episodeItems = episodesList.querySelectorAll('.episode-item');
-    episodeItems.forEach(item => item.classList.remove('active'));
-    episodeItems[index].classList.add('active');
-    
-    // Scroll to the active episode in the list
-    episodeItems[index].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    
-    // Hide placeholder and show video player
-    videoPlaceholder.style.display = 'none';
-    videoPlayer.style.display = 'block';
-    
-    // Clear existing src first (important for some browsers)
-    videoPlayer.src = '';
-    
-    // Set timeout to ensure DOM updates before loading new video
-    setTimeout(() => {
-        // For demo purposes we're using a placeholder video
-        // In a real app, you would use: episode.videoUrl
-        videoPlayer.src = `https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&rel=0&modestbranding=1`;
+    <div class="container">
+        <h1 id="anime-title">Loading...</h1>
+        <img id="anime-cover" src="" alt="Anime Cover">
+        <p id="anime-desc">Fetching description...</p>
         
-        // Force iframe refresh (can help with some player issues)
-        videoPlayer.contentWindow.location.reload(true);
-    }, 100);
-    
-    // Update episode info
-    episodeInfo.style.display = 'block';
-    episodeInfoTitle.textContent = `${episode.number}. ${episode.title}`;
-    episodeInfoDescription.textContent = episode.description;
-    
-    // Update navigation controls
-    updateNavigationControls();
-}
+        <video controls>
+            <source src="VIDEO_URL_HERE" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
 
-// Add this function to handle video errors
-function handleVideoError() {
-    videoPlayer.addEventListener('error', () => {
-        // Show an error message in the video container
-        videoPlaceholder.style.display = 'flex';
-        videoPlaceholder.innerHTML = `
-            <div class="video-placeholder-icon">⚠️</div>
-            <p>Error loading video. Please try again.</p>
-        `;
-        videoPlayer.style.display = 'none';
-    });
-}
+    <script>
+        const animeId = "ANIME_ID_HERE"; // Replace with an AniList anime ID
 
-// Call this function after the page loads
-document.addEventListener('DOMContentLoaded', () => {
-    // Existing code...
-    
-    // Add error handling for video
-    handleVideoError();
-});
-</script>
+        async function fetchAnime() {
+            const query = `
+                query ($id: Int) {
+                    Media(id: $id, type: ANIME) {
+                        title {
+                            romaji
+                        }
+                        description
+                        coverImage {
+                            large
+                        }
+                    }
+                }
+            `;
+
+            const variables = { id: animeId };
+
+            const response = await fetch("https://graphql.anilist.co", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query, variables })
+            });
+
+            const data = await response.json();
+            const anime = data.data.Media;
+
+            document.getElementById("anime-title").innerText = anime.title.romaji;
+            document.getElementById("anime-desc").innerHTML = anime.description;
+            document.getElementById("anime-cover").src = anime.coverImage.large;
+        }
+
+        fetchAnime();
+    </script>
+
+</body>
+</html>
