@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AniList Video Player</title>
+    <title>Anime Episode Streaming Links</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -73,7 +73,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>AniList Video Player</h1>
+        <h1>Anime Episode Streaming Links</h1>
         
         <div id="video-container">
             <div id="player">
@@ -82,14 +82,14 @@
         </div>
         
         <div class="controls">
-            <button id="fetch-btn">Fetch Video Information</button>
+            <button id="fetch-btn">Fetch Streaming Links</button>
         </div>
         
         <div id="error-message" class="error"></div>
         
         <div id="anime-info" class="info">
-            <h3>About This Media</h3>
-            <p>ID: 99263 - Episode: 1</p>
+            <h3>About This Episode</h3>
+            <p>ID: steinsgate-3 - Episode: 230</p>
             <div id="title-container"></div>
             <div id="description-container"></div>
         </div>
@@ -97,104 +97,39 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const animeId = 99263;
-            const episode = 1;
+            const animeEpisodeId = 'steinsgate-3'; // Example anime episode ID
+            const server = 'hd-1'; // Example server
+            const category = 'dub'; // Example category
             const errorElement = document.getElementById('error-message');
             const playerElement = document.getElementById('player');
             const loadingMessage = document.getElementById('loading-message');
             const titleContainer = document.getElementById('title-container');
             const descriptionContainer = document.getElementById('description-container');
 
-            // AniList GraphQL endpoint
-            const ANILIST_API = 'https://graphql.anilist.co';
-
-            // GraphQL query to get anime information
-            const query = `
-                query ($id: Int) {
-                    Media(id: $id, type: ANIME) {
-                        id
-                        title {
-                            romaji
-                            english
-                            native
-                        }
-                        description
-                        streamingEpisodes {
-                            title
-                            thumbnail
-                            url
-                            site
-                        }
-                    }
-                }
-            `;
-
-            // Function to fetch anime data from AniList API
-            async function fetchAnimeData() {
-                loadingMessage.textContent = "Fetching anime data...";
-
+            // Function to fetch and display episode streaming links
+            async function fetchAndDisplayEpisodeLinks() {
                 try {
-                    const response = await axios.post(ANILIST_API, {
-                        query: query,
-                        variables: { id: animeId }
-                    });
+                    const response = await axios.get(`https://animeapi-lyart.vercel.app/api/v2/hianime/episode/sources?animeEpisodeId=${animeEpisodeId}&server=${server}&category=${category}`);
+                    const data = response.data;
 
-                    const result = response.data;
+                    if (data.success) {
+                        const streamingLinks = data.data.sources;
 
-                    if (result.errors) {
-                        throw new Error(result.errors[0].message);
-                    }
-
-                    return result.data.Media;
-                } catch (error) {
-                    showError("Error fetching anime data: " + error.message);
-                    return null;
-                }
-            }
-
-            // Function to display anime information
-            function displayAnimeInfo(anime) {
-                if (!anime) return;
-
-                // Display title
-                const title = anime.title.english || anime.title.romaji || anime.title.native;
-                titleContainer.innerHTML = `<h2>${title}</h2>`;
-
-                // Display description (with HTML sanitized)
-                if (anime.description) {
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = anime.description;
-                    descriptionContainer.innerHTML = `<p>${tempDiv.textContent}</p>`;
-                }
-
-                // Check if streaming episodes are available
-                if (anime.streamingEpisodes && anime.streamingEpisodes.length > 0) {
-                    const episodeInfo = anime.streamingEpisodes.find(ep => ep.title.includes(`${episode}`) || ep.title.toLowerCase().includes(`episode ${episode}`));
-
-                    if (episodeInfo) {
-                        loadingMessage.textContent = `Episode ${episode} is available on ${episodeInfo.site}.`;
-
-                        if (episodeInfo.thumbnail) {
-                            playerElement.innerHTML = `
-                                <div style="text-align: center;">
-                                    <img src="${episodeInfo.thumbnail}" alt="Episode Thumbnail" style="max-width: 100%; max-height: 350px;">
-                                    <p>This video is available on ${episodeInfo.site}. Due to licensing restrictions, it cannot be played directly here.</p>
-                                    <a href="${episodeInfo.url}" target="_blank" style="display: inline-block; margin-top: 10px; padding: 8px 15px; background-color: #2e51a2; color: white; text-decoration: none; border-radius: 4px;">Watch on ${episodeInfo.site}</a>
-                                </div>
-                            `;
-                        } else {
-                            playerElement.innerHTML = `
-                                <div style="text-align: center;">
-                                    <p>This video is available on ${episodeInfo.site}. Due to licensing restrictions, it cannot be played directly here.</p>
-                                    <a href="${episodeInfo.url}" target="_blank" style="display: inline-block; margin-top: 10px; padding: 8px 15px; background-color: #2e51a2; color: white; text-decoration: none; border-radius: 4px;">Watch on ${episodeInfo.site}</a>
-                                </div>
-                            `;
-                        }
+                        // Display streaming links
+                        playerElement.innerHTML = '<h2>Streaming Links</h2>';
+                        streamingLinks.forEach(source => {
+                            const linkElement = document.createElement('a');
+                            linkElement.href = source.url;
+                            linkElement.target = '_blank';
+                            linkElement.innerText = source.quality ? `Quality: ${source.quality}` : 'Streaming Link';
+                            playerElement.appendChild(linkElement);
+                            playerElement.appendChild(document.createElement('br'));
+                        });
                     } else {
-                        loadingMessage.textContent = `No specific information found for Episode ${episode}.`;
+                        throw new Error('Failed to fetch streaming links');
                     }
-                } else {
-                    loadingMessage.textContent = "No streaming information available through AniList API.";
+                } catch (error) {
+                    showError("Error fetching episode streaming links: " + error.message);
                 }
             }
 
@@ -205,22 +140,10 @@
                 loadingMessage.textContent = "An error occurred.";
             }
 
-            // Function to fetch and display episode source from Animix
-            async function fetchAndDisplayEpisodeSource() {
-                try {
-                    const episodeSource = await getEpisodeSourceFromAnimix("One Piece", "1015");
-                    console.log(episodeSource);
-                } catch (error) {
-                    showError("Error fetching episode source: " + error.message);
-                }
-            }
-
             // Add event listener to fetch button
             document.getElementById('fetch-btn').addEventListener('click', async function() {
                 errorElement.style.display = 'none';
-                const animeData = await fetchAnimeData();
-                displayAnimeInfo(animeData);
-                await fetchAndDisplayEpisodeSource();
+                await fetchAndDisplayEpisodeLinks();
             });
         });
     </script>
