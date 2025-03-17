@@ -69,9 +69,7 @@
             display: none;
         }
     </style>
-<script src="
-https://cdn.jsdelivr.net/npm/anigo-anime-api@1.0.3/lib/zoro/getAnimeInfoFromZoro.min.js
-"></script>
+    <script src="https://cdn.jsdelivr.net/npm/anigo-anime-api@1.0.3/lib/zoro/getAnimeInfoFromZoro.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -214,16 +212,23 @@ https://cdn.jsdelivr.net/npm/anigo-anime-api@1.0.3/lib/zoro/getAnimeInfoFromZoro
                 loadingMessage.textContent = "An error occurred.";
             }
             
+            async function fetchAndDisplayEpisodeSource() {
+                try {
+                    const episodeSource = await anigo.getEpisodeSourceFromAnimix("One Piece", "1015");
+                    console.log(episodeSource);
+                } catch (error) {
+                    showError("Error fetching episode source: " + error.message);
+                }
+            }
+
             // Add event listener to fetch button
             document.getElementById('fetch-btn').addEventListener('click', async function() {
                 errorElement.style.display = 'none';
                 const animeData = await fetchAnimeData();
                 displayAnimeInfo(animeData);
+                await fetchAndDisplayEpisodeSource();
             });
         });
-const anigo = require("anigo-anime-api");
-console.log(await anigo.getEpisodeSourceFromAnimix("One Piece", "1015"));
     </script>
-
 </body>
 </html>
