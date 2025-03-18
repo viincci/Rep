@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embedded Video Player</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #000;
+            color: #fff;
+            text-align: center;
+        }
+        iframe {
+            width: 80%;
+            height: 450px;
+            border: none;
+        }
+        button {
+            background-color: #34cfeb;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #6900e0;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Video Player</h1>
+    <div id="player"></div>
+    <button onclick="loadVideo()">Load Video</button>
+
+    <script>
+        function loadVideo() {
+            const videoID = "tt7286456"; // Replace with dynamic video ID
+            const preferredServer = 12;  // Replace with preferred server (or leave 0 for auto)
+
+            const embedURL = `https://getsuperembed.link/?video_id=${videoID}&preferred_server=${preferredServer}`;
+
+            document.getElementById("player").innerHTML = `<iframe src="${embedURL}" allowfullscreen></iframe>`;
+        }
+    </script>
+
+</body>
+</html>
